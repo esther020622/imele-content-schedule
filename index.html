@@ -72,38 +72,40 @@
     const people = ['김경진', '박에스더', '이민우'];
     const startDate = new Date('2025-05-29');
     const endDate = new Date('2025-06-30');
-    const holidays = ['2025-06-04', '2025-06-06']; // 현충일 + 추가된 6월 4일
+    const holidays = ['2025-06-04', '2025-06-06'];
 
     const isWeekend = date => date.getDay() === 0 || date.getDay() === 6;
     const isHoliday = date => holidays.includes(date.toISOString().slice(0, 10));
 
     const scheduleBody = document.getElementById('schedule-body');
     const scheduleData = [];
-    let personIndex = 0;
+    let dayCounter = 0;
 
     for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const dateStr = d.toISOString().slice(0, 10);
       if (isWeekend(d) || isHoliday(d)) continue;
 
-      contents.forEach(content => {
+      // 하루 단위로 셔플된 담당자 리스트 생성
+      const assignedPeople = [...people.slice(dayCounter % 3)].concat(people.slice(0, dayCounter % 3));
+
+      contents.forEach((content, idx) => {
         const entry = {
           date: dateStr,
           day: d.toLocaleDateString('ko-KR', { weekday: 'long' }),
           content: content,
-          person: people[personIndex % people.length]
+          person: assignedPeople[idx]
         };
         scheduleData.push(entry);
-        personIndex++;
       });
+      dayCounter++;
     }
 
-    // HTML 테이블에 삽입 (날짜/요일 병합)
+    // 테이블 출력 (날짜 셀 병합)
     let currentDate = '';
-    scheduleData.forEach((item, index) => {
+    scheduleData.forEach((item, index, arr) => {
       const row = document.createElement('tr');
-
       if (item.date !== currentDate) {
-        const rowspan = scheduleData.filter(i => i.date === item.date).length;
+        const rowspan = arr.filter(i => i.date === item.date).length;
         row.innerHTML = `
           <td rowspan="${rowspan}">${item.date} (${item.day})</td>
           <td>${item.content}</td>
@@ -119,7 +121,7 @@
       scheduleBody.appendChild(row);
     });
 
-    // 오늘 담당 콘텐츠 표시
+    // 오늘의 담당 콘텐츠 필터링
     document.getElementById('name').addEventListener('change', function () {
       const name = this.value;
       const today = new Date();
