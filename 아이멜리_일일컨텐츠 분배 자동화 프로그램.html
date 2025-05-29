@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>콘텐츠 스케줄러</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      padding: 40px;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      color: #333;
+    }
+    label, select {
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    #today-task {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #444;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-top: 40px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+  </style>
+</head>
+<body>
+  <h1>2025년 5월 29일 ~ 6월 30일 콘텐츠 담당 스케줄</h1>
+
+  <label for="name">이름을 선택하세요:</label>
+  <select id="name">
+    <option value="">-- 선택 --</option>
+    <option value="김경진">김경진</option>
+    <option value="박에스더">박에스더</option>
+    <option value="이민우">이민우</option>
+  </select>
+
+  <div id="today-task">오늘의 담당 콘텐츠가 여기에 표시됩니다.</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>날짜 / 요일</th>
+        <th>담당 콘텐츠</th>
+        <th>담당자</th>
+      </tr>
+    </thead>
+    <tbody id="schedule-body"></tbody>
+  </table>
+
+  <script>
+    const contents = ['블로그', '뉴스 사이트', '커뮤니티'];
+    const people = ['김경진', '박에스더', '이민우'];
+    const startDate = new Date('2025-05-29');
+    const endDate = new Date('2025-06-30');
+    const holidays = ['2025-06-04', '2025-06-06']; // 현충일 + 추가된 6월 4일
+
+    const isWeekend = date => date.getDay() === 0 || date.getDay() === 6;
+    const isHoliday = date => holidays.includes(date.toISOString().slice(0, 10));
+
+    const scheduleBody = document.getElementById('schedule-body');
+    const scheduleData = [];
+    let personIndex = 0;
+
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().slice(0, 10);
+      if (isWeekend(d) || isHoliday(d)) continue;
+
+      contents.forEach(content => {
+        const entry = {
+          date: dateStr,
+          day: d.toLocaleDateString('ko-KR', { weekday: 'long' }),
+          content: content,
+          person: people[personIndex % people.length]
+        };
+        scheduleData.push(entry);
+        personIndex++;
+      });
+    }
+
+    // HTML 테이블에 삽입 (날짜/요일 병합)
+    let currentDate = '';
+    scheduleData.forEach((item, index) => {
+      const row = document.createElement('tr');
+
+      if (item.date !== currentDate) {
+        const rowspan = scheduleData.filter(i => i.date === item.date).length;
+        row.innerHTML = `
+          <td rowspan="${rowspan}">${item.date} (${item.day})</td>
+          <td>${item.content}</td>
+          <td>${item.person}</td>
+        `;
+        currentDate = item.date;
+      } else {
+        row.innerHTML = `
+          <td>${item.content}</td>
+          <td>${item.person}</td>
+        `;
+      }
+      scheduleBody.appendChild(row);
+    });
+
+    // 오늘 담당 콘텐츠 표시
+    document.getElementById('name').addEventListener('change', function () {
+      const name = this.value;
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+
+      const tasks = scheduleData.filter(item => item.date === todayStr && item.person === name);
+
+      const display = document.getElementById('today-task');
+      if (name === '') {
+        display.textContent = '오늘의 담당 콘텐츠가 여기에 표시됩니다.';
+      } else if (tasks.length > 0) {
+        const taskList = tasks.map(t => t.content).join(', ');
+        display.textContent = `${todayStr}에 ${name}님의 담당 콘텐츠는: ${taskList}`;
+      } else {
+        display.textContent = `${todayStr}에 ${name}님의 담당 콘텐츠는 없습니다.`;
+      }
+    });
+  </script>
+</body>
+</html>
